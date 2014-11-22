@@ -8,7 +8,7 @@ import com.iokays.test.data.TestList;
 
 public class EntityTest {
 
-    @Test
+//    @Test
     public void test() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Entity.create(TestList.class);
     }
