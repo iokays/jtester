@@ -1,5 +1,7 @@
 package com.iokays.test.data;
 
+import static com.iokays.test.data.TestDataMap.map;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
@@ -12,24 +14,63 @@ import com.iokays.test.entity.Entity;
 
 public class TestData<E> {
     
-    
     public static String _string() {
         return strings[random.nextInt(strings.length)];
+    }
+    public static String _string(String clazz, String property) {
+        if (map.containsKey(clazz)) {
+            List<Object> list = map.get(clazz).get(property);
+            if (null != list) {
+                return list.get(random.nextInt(list.size())).toString();
+            }
+        } 
+        return _string();
     }
 
     public static Integer _integer() {
         return integers[random.nextInt(integers.length)];
+    }
+    
+    public static Integer _integer(String clazz, String property) {
+        if (map.containsKey(clazz)) {
+            List<Object> list = map.get(clazz).get(property);
+            if (null != list) {
+                return Integer.valueOf(list.get(random.nextInt(list.size())).toString());
+            }
+        } 
+        return _integer();
     }
 
     public static Long _long() {
         return longs[random.nextInt(longs.length)];
     }
     
-    public static <T> List<T> _list(Class<T> clazz) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public static Long _long(String clazz, String property) {
+        if (map.containsKey(clazz)) {
+            List<Object> list = map.get(clazz).get(property);
+            if (null != list) {
+                return Long.valueOf(list.get(random.nextInt(list.size())).toString());
+            }
+        } 
+        return _long();
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> _list(Class<T> clazz, String clazzName, String property) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Set<T> set = Sets.newHashSet();
         final int length = random.nextInt(strings.length);
         for (int i = 0; i < length; ++i) {
-            set.add(Entity.create(clazz));
+            if (clazz == String.class) {
+                set.add((T) TestData._string(clazzName, property));
+            } else if (clazz == Integer.class || clazz== int.class) {
+                set.add((T) TestData._integer(clazzName, property));
+            } else if (clazz == Long.class || clazz== long.class) {
+                set.add((T) TestData._long(clazzName, property));
+            } else if (clazz.isEnum()) {
+                set.add(TestData._enum(clazz));
+            } else {
+                set.add(Entity.create(clazz));
+            }
         }
         return Lists.newArrayList(set.iterator());
     }

@@ -9,61 +9,57 @@ import com.google.common.collect.Lists;
 import com.iokays.test.data.TestData;
 
 public class Entity {
+    @SuppressWarnings("unchecked")
     public static <T> T create(Class<T> clazz) throws InstantiationException, IllegalAccessException,
             IllegalArgumentException, InvocationTargetException {
-        if (clazz == String.class) {
-            return (T) TestData._string();
-        } else if (clazz == Integer.class || clazz== int.class) {
-            return (T) TestData._integer();
-        } else if (clazz == Long.class || clazz== long.class) {
-            return (T) TestData._long();
-        } else if (clazz.isEnum()) {
-            return TestData._enum(clazz);
+
+        T entity = clazz.newInstance();
+        Method[] methods = clazz.getMethods();
+        List<Method> setters = Lists.newArrayList();
+        for (Method method : methods) {
+            if (isSetter(method) && method.getParameterTypes().length == 1) {
+                setters.add(method);
+            }
         }
-        else {
-            T entity = clazz.newInstance();
-            Method[] methods = clazz.getMethods();
-            List<Method> setters = Lists.newArrayList();
-            for (Method method : methods) {
-                if (isSetter(method) && method.getParameterTypes().length == 1) {
-                    setters.add(method);
+        Integer[] methodMark = TestData._random(setters.size());
+        for (Integer mark : methodMark) {
+            Method method = setters.get(mark);
+            
+            String className = clazz.getSimpleName().toLowerCase();
+            String propertyName = method.getName().substring(3).toLowerCase();
+            
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (1 == parameterTypes.length) {
+                if (parameterTypes[0] == String.class) {
+                    method.invoke(entity, TestData._string(className, propertyName));
                 }
-            }
-            Integer[] methodMark = TestData._random(setters.size());
-            for (Integer mark : methodMark) {
-                Method method = setters.get(mark);
-                
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (1 == parameterTypes.length) {
-                    if (parameterTypes[0] == String.class) {
-                        method.invoke(entity, create(String.class));
-                    }
 
-                    if (parameterTypes[0] == Integer.class || parameterTypes[0] == int.class) { // 对象为Integer
-                        method.invoke(entity, create(Integer.class));
-                    }
+                if (parameterTypes[0] == Integer.class || parameterTypes[0] == int.class) { // 对象为Integer
+                    method.invoke(entity, TestData._integer(className, propertyName));
+                }
 
-                    if (parameterTypes[0] == Long.class || parameterTypes[0] == long.class) { // 对象为Long
-                        method.invoke(entity, create(Long.class));
-                    }
+                if (parameterTypes[0] == Long.class || parameterTypes[0] == long.class) { // 对象为Long
+                    method.invoke(entity, TestData._long(className, propertyName));
+                }
 
-                    if (parameterTypes[0].isEnum()) { // 对象为Enum
-                        method.invoke(entity, create(parameterTypes[0]));
-                    }
+                if (parameterTypes[0].isEnum()) { // 对象为Enum
+                    method.invoke(entity, create(parameterTypes[0]));
+                }
 
-                    if (parameterTypes[0] == List.class) {// 对象为List
-                        ParameterizedType type = (ParameterizedType) method.getGenericParameterTypes()[0];
-                        Class entityClass= (Class) (type.getActualTypeArguments()[0]);
-                        try {
-                            method.invoke(entity, TestData._list(entityClass));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                if (parameterTypes[0] == List.class) {// 对象为List
+                    ParameterizedType type = (ParameterizedType) method.getGenericParameterTypes()[0];
+                    @SuppressWarnings("rawtypes")
+                    Class entityClass= (Class) (type.getActualTypeArguments()[0]);
+                    try {
+                        method.invoke(entity, TestData._list(entityClass, className, propertyName));
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }
-            return entity;
-        } 
+        }
+        return entity;
+    
     }
     
     public static boolean isGetter(Method method) {
